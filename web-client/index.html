@@ -1,0 +1,56 @@
+<!doctype html>
+<html>
+
+<head>
+    <title>Fancy Portal</title>
+</head>
+
+<body>
+    <h1>Welcome to the AI powered Task Management Portal!</h1>
+    <h2>Enter the user you want to have a task assigned:</h2>
+    <form id="form">
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username"><br><br>
+    </form>
+
+    <button id="post-btn">Send</button>
+    <h2>Assigned task:</h2>
+    <div id="task">Assigned task will be displayed here.</div>
+
+    <script>
+        const button = document.getElementById('post-btn');
+        button.addEventListener('click', async _ => {
+            const form = document.getElementById('form');
+            let taskDisplay = document.getElementById('task');
+            const formData = new FormData(form);
+            const username = formData.get('username');
+            try {
+                const response = await fetch('http://localhost:12345/task', {
+                    method: 'post',
+                    mode: 'cors',
+                    credentials: 'same-origin', 
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 'name': username })
+                });
+                if (response.ok) {
+                    let task = await response.json();
+                    taskDisplay.innerHTML = username + "'s new task is " + task.name + '.';
+                }
+                else {
+                    let text = await response.json();
+                    taskDisplay.innerHTML = text.detail;
+                }
+
+            } catch (err) {
+                console.error(`Error: ${err}`);
+            }
+        });
+    </script>
+
+
+
+</body>
+
+</html>

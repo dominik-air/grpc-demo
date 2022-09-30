@@ -1,0 +1,36 @@
+version: "3.9"
+services:
+  website:
+    build:
+      context: .
+      dockerfile: web-client/Dockerfile
+    ports:
+      - "9001:9000"
+    depends_on:
+      - main-server
+  main-server:
+    build:
+      context: .
+      dockerfile: main-server/Dockerfile
+    ports:
+      - "12345:12345"
+    networks:
+        - grpc-demo
+    depends_on:
+      - vault
+      - recommendation
+  vault:
+    build:
+      context: .
+      dockerfile: vault/Dockerfile
+    networks:
+        - grpc-demo
+  recommendation:
+    build:
+      context: .
+      dockerfile: recommendation/Dockerfile
+    networks:
+        - grpc-demo
+  
+networks:
+    grpc-demo:

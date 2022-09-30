@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+enum Priority {
+    LOW = 0;
+    MEDIUM = 1;
+    HIGH = 2;
+}
+
+message Task {
+    string name = 1;
+    string description = 2;
+    Priority priority = 3;
+}
+
+message TaskRequest {
+    string assignee = 1;
+    repeated Task open_tasks = 2;
+}
+
+message TaskResponse {
+    Task task = 1;
+}
+
+service RecommendationManager {
+    rpc choose_task_for_user(TaskRequest) returns (TaskResponse);
+}
