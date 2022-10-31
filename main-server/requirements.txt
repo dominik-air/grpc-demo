@@ -1,4 +1,5 @@
 fastapi
+pymongo
 uvicorn[standard]
 grpcio==1.47.0
 grpcio-tools==1.47.0
