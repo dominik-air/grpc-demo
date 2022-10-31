@@ -16,6 +16,9 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S",
 )
 
+def read_secret(secret_file: str) -> bytes:
+    with open(secret_file, "rb") as fp:
+        return fp.read()
 
 class RecommendationService(recommendations_pb2_grpc.RecommendationManager):
     def choose_task_for_user(self, request: TaskRequest, context):
@@ -31,10 +34,8 @@ def serve():
         RecommendationService(), server
     )
 
-    with open("server.key", "rb") as fp:
-        server_key = fp.read()
-    with open("server.pem", "rb") as fp:
-        server_cert = fp.read()
+    server_key = read_secret(secret_file="server.key")
+    server_cert = read_secret(secret_file="server.pem")
 
     creds = grpc.ssl_server_credentials([(server_key, server_cert)])
     server.add_secure_port("[::]:50052", creds)

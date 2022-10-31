@@ -19,6 +19,9 @@ services:
     depends_on:
       - vault
       - recommendation
+      - init-db-job
+    environment:
+      MONGODB_URI: mongodb://root:notsecurebutwhatever@mongo:27017/
   vault:
     build:
       context: .
@@ -31,6 +34,19 @@ services:
       dockerfile: recommendation/Dockerfile
     networks:
         - grpc-demo
-  
+  init-db-job:
+    build:
+        context: .
+        dockerfile: init-db/Dockerfile
+    depends_on:
+      - mongo
+    environment:
+      MONGODB_URI: mongodb://root:notsecurebutwhatever@mongo:27017/
+  mongo:
+    image: mongo
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: notsecurebutwhatever
 networks:
     grpc-demo:

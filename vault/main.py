@@ -12,6 +12,10 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S",
 )
 
+def read_secret(secret_file: str) -> bytes:
+    with open(secret_file, "rb") as fp:
+        return fp.read()
+
 class VaultService(vault_pb2_grpc.VaultManagerServicer):
     def get_secret(self, request: VaultRequest, context):
         logging.info(f"Provided token: '{request.vault_token}' is correct.")
@@ -27,10 +31,8 @@ def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     vault_pb2_grpc.add_VaultManagerServicer_to_server(VaultService(), server)
 
-    with open("server.key", "rb") as fp:
-        server_key = fp.read()
-    with open("server.pem", "rb") as fp:
-        server_cert = fp.read()
+    server_key = read_secret(secret_file="server.key")
+    server_cert = read_secret(secret_file="server.pem")
 
     creds = grpc.ssl_server_credentials([(server_key, server_cert)])
     server.add_secure_port("[::]:50051", creds)
