@@ -1,8 +1,13 @@
 FROM python:3.10-alpine
 
+RUN apk add openssl --no-cache
+
 RUN mkdir /service
+
 COPY protobufs/ /service/protobufs/
 COPY main-server/ /service/main-server/
+COPY ca.pem /service/main-server/
+
 WORKDIR /service/main-server
 
 RUN python -m pip install --upgrade pip --no-cache-dir

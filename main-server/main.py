@@ -86,8 +86,11 @@ def assign_task(assignee: str) -> Task:
     request = TaskRequest(
         assignee=assignee, open_tasks=[create_grpc_task(task) for task in open_tasks]
     )
-    # create a channel and grpc client for vault
-    channel = grpc.insecure_channel("recommendation:50052")
+    # create a channel and grpc client for the recommendation service
+    with open("ca.pem", "rb") as fp:
+        ca_cert = fp.read()
+    creds = grpc.ssl_channel_credentials(ca_cert)
+    channel = grpc.secure_channel("recommendation:50052", creds)
     grpc_client = RecommendationManagerStub(channel)
     # get response from vault grpc server
     print("Sending a TaskRequest.")
@@ -110,8 +113,11 @@ def pretty_format_secrets(secrets: list[KeyValuePair]) -> str:
 def example_vault_call():
     token = os.getenv("VAULT_TOKEN")
     request = VaultRequest(vault_token=token, requested_secret="sbx/devops")
-    # create a channel and grpc client for vault
-    channel = grpc.insecure_channel("vault:50051")
+        # create a channel and grpc client for vault
+    with open("ca.pem", "rb") as fp:
+        ca_cert = fp.read()
+    creds = grpc.ssl_channel_credentials(ca_cert)
+    channel = grpc.secure_channel("vault:50052", creds)
     grpc_client = VaultManagerStub(channel)
     # get response from vault grpc server
     print("Sending a VaultRequest.")
