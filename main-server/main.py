@@ -1,4 +1,5 @@
 import os
+import logging
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -10,6 +11,13 @@ from vault_pb2_grpc import VaultManagerStub
 from recommendations_pb2 import Priority, TaskRequest, TaskResponse
 from recommendations_pb2 import Task as gRPC_Task
 from recommendations_pb2_grpc import RecommendationManagerStub
+
+# Setup log level
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s.%(msecs)03d %(levelname)s %(module)s - %(funcName)s - %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
 
 app = FastAPI()
 
@@ -93,9 +101,9 @@ def assign_task(assignee: str) -> Task:
     channel = grpc.secure_channel("recommendation:50052", creds)
     grpc_client = RecommendationManagerStub(channel)
     # get response from vault grpc server
-    print("Sending a TaskRequest.")
+    logging.info("Sending a TaskRequest.")
     response: TaskResponse = grpc_client.choose_task_for_user(request)
-    print("A TaskResponse was received.")
+    logging.info("A TaskResponse was received.")
 
     task = find_task_by_name(response.task.name)
     task.assignee = assignee
@@ -120,10 +128,10 @@ def example_vault_call():
     channel = grpc.secure_channel("vault:50052", creds)
     grpc_client = VaultManagerStub(channel)
     # get response from vault grpc server
-    print("Sending a VaultRequest.")
+    logging.info("Sending a VaultRequest.")
     response: VaultResponse = grpc_client.get_secret(request)
-    print(f"Received secrets:")
-    print(pretty_format_secrets(response.secrets))
+    logging.info(f"Received secrets:")
+    logging.info(pretty_format_secrets(response.secrets))
 
 
 @app.post("/task")
