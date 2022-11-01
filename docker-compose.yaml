@@ -14,39 +14,46 @@ services:
       dockerfile: main-server/Dockerfile
     ports:
       - "12345:12345"
+    environment: 
+      - MONGODB_URI=mongodb://root:uncrackable@document-db
     networks:
-        - grpc-demo
+        - grpc
+        - db
     depends_on:
       - vault
       - recommendation
       - init-db-job
-    environment:
-      MONGODB_URI: mongodb://root:notsecurebutwhatever@mongo:27017/
   vault:
     build:
       context: .
       dockerfile: vault/Dockerfile
     networks:
-        - grpc-demo
+        - grpc
   recommendation:
     build:
       context: .
       dockerfile: recommendation/Dockerfile
     networks:
-        - grpc-demo
+        - grpc
   init-db-job:
     build:
         context: .
         dockerfile: init-db/Dockerfile
+    environment: 
+      - MONGODB_URI=mongodb://root:uncrackable@document-db
+    networks:
+      - db
     depends_on:
       - mongo
-    environment:
-      MONGODB_URI: mongodb://root:notsecurebutwhatever@mongo:27017/
-  mongo:
+  document-db:
     image: mongo
-    restart: always
     environment:
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: notsecurebutwhatever
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=uncrackable
+    networks:
+      - db
+    expose:
+      - 27017
 networks:
-    grpc-demo:
+    grpc:
+    db:
