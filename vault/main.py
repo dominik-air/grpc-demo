@@ -1,20 +1,25 @@
-from concurrent import futures
+import os
 import grpc
 import logging
+from concurrent import futures
 
-from vault_pb2 import VaultRequest, VaultResponse, KeyValuePair
 import vault_pb2_grpc
+from vault_pb2 import VaultRequest, VaultResponse, KeyValuePair
+
+LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO").upper()
 
 # Setup log level
 logging.basicConfig(
-    level=logging.INFO,
+    level=LOG_LEVEL,
     format="%(asctime)s.%(msecs)03d %(levelname)s %(module)s - %(funcName)s - %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
 )
 
+
 def read_secret(secret_file: str) -> bytes:
     with open(secret_file, "rb") as fp:
         return fp.read()
+
 
 class VaultService(vault_pb2_grpc.VaultManagerServicer):
     def get_secret(self, request: VaultRequest, context):
