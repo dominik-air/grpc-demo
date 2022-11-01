@@ -1,5 +1,6 @@
 import os
 import logging
+from pprint import pformat
 from pymongo import MongoClient
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -14,9 +15,12 @@ from recommendations_pb2 import Priority, TaskRequest, TaskResponse
 from recommendations_pb2 import Task as gRPC_Task
 from recommendations_pb2_grpc import RecommendationManagerStub
 
+LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO").upper()
+MONGODB_URI = os.environ.get("MONGODB_URI", "mongodb://localhost:27017/")
+
 # Setup log level
 logging.basicConfig(
-    level=logging.INFO,
+    level=LOG_LEVEL,
     format="%(asctime)s.%(msecs)03d %(levelname)s %(module)s - %(funcName)s - %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
 )
@@ -32,10 +36,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-MONGODB_URI = "mongodb://localhost:27017/"
-if os.getenv("MONGODB_URI"):
-    MONGODB_URI = os.getenv("MONGODB_URI")
 
 
 class User(BaseModel):
@@ -70,9 +70,9 @@ def create_task_from_document(document: dict[str, str]) -> Task:
     )
 
 
-def update_task_in_db(task: Task) -> None:
-    MongoClient(MONGODB_URI).jira.tasks.find_one_and_update(
-        {"name": task.name}, task.json()
+def update_task_assignee_in_db(task: Task) -> None:
+    MongoClient(MONGODB_URI).jira.tasks.update_one(
+        {"name": task.name}, {"$set": {"assignee": task.assignee}}
     )
 
 
@@ -123,7 +123,9 @@ def assign_task(open_tasks: list[Task], assignee: str) -> Task:
     logging.info("Sending a TaskRequest.")
     response: TaskResponse = grpc_client.choose_task_for_user(request)
     logging.info("A TaskResponse was received.")
-    return find_task_by_name(open_tasks, response.task.name)
+    task = find_task_by_name(open_tasks, response.task.name)
+    task.assignee = assignee
+    return task
 
 
 def read_secret(secret_file: str) -> bytes:
@@ -156,10 +158,18 @@ def example_vault_call():
 
 @app.post("/task")
 def assign_task_to_user(user: User):
+    logging.debug("Entered task endpoint")
     tasks = get_tasks_from_document_db()
+    logging.debug("Got tasks from db")
+    for task in tasks:
+        logging.debug(pformat(task))
+    logging.debug("Header guards")
     is_assignee_a_valid_name(assignee=user.name)
     is_assignee_free(tasks, assignee=user.name)
     open_tasks = find_open_tasks(tasks)
+    logging.debug("Found open tasks")
     task = assign_task(open_tasks, assignee=user.name)
-    update_task_in_db(task)
+    logging.debug("Task assigned")
+    update_task_assignee_in_db(task)
+    logging.debug("Updated db")
     return task

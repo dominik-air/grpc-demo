@@ -3,13 +3,12 @@ import logging
 from pprint import pformat
 from pymongo import MongoClient
 
-MONGODB_URI = "mongodb://localhost:27017/"
-if os.getenv("MONGODB_URI"):
-    MONGODB_URI = os.getenv("MONGODB_URI")
+LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO").upper()
+MONGODB_URI = os.environ.get("MONGODB_URI", "mongodb://localhost:27017/")
 
 # Setup log level
 logging.basicConfig(
-    level=logging.INFO,
+    level=LOG_LEVEL,
     format="%(asctime)s.%(msecs)03d %(levelname)s %(module)s - %(funcName)s - %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
 )
@@ -44,8 +43,7 @@ def populate_db():
 def show_db_contents():
     logging.info("Data check...")
     for task in MongoClient(MONGODB_URI).jira.tasks.find():
-        logging.info(pformat(task))
-
+        logging.debug(pformat(task))
 
 if __name__ == "__main__":
     logging.info("Setting MongoDB up...")
